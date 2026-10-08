@@ -10,25 +10,51 @@ function apiKey(): string {
   return key;
 }
 
+const MAX_RETRIES = 3;
+const RETRY_BASE_MS = 500;
+
+function isRetryable(err: unknown): boolean {
+  if (err instanceof Error) {
+    if (/ECONNRESET|ETIMEDOUT|ENOTFOUND|socket hang up/i.test(err.message)) return true;
+    if (/Qloo request failed \((429|5\d\d)\)/.test(err.message)) return true;
+  }
+  return false;
+}
+
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (attempt === MAX_RETRIES || !isRetryable(err)) throw err;
+      const delay = RETRY_BASE_MS * 2 ** attempt + Math.random() * 200;
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw new Error("withRetry: exhausted retries"); // unreachable
+}
+
 async function qlooFetch(path: string, params: Record<string, string>): Promise<unknown> {
   const url = new URL(path, BASE_URL);
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== "") url.searchParams.set(k, v);
   }
 
-  const res = await fetch(url.toString(), {
-    headers: { "X-Api-Key": apiKey() },
+  return withRetry(async () => {
+    const res = await fetch(url.toString(), {
+      headers: { "X-Api-Key": apiKey() },
+    });
+
+    const body = await res.json();
+
+    if (!res.ok || body?.errors) {
+      const message =
+        body?.errors?.[0]?.message ?? body?.message ?? `Qloo request failed (${res.status})`;
+      throw new Error(message);
+    }
+
+    return body;
   });
-
-  const body = await res.json();
-
-  if (!res.ok || body?.errors) {
-    const message =
-      body?.errors?.[0]?.message ?? body?.message ?? `Qloo request failed (${res.status})`;
-    throw new Error(message);
-  }
-
-  return body;
 }
 
 export type QlooEntityType =

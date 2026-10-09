@@ -147,7 +147,7 @@ export function SetupPanel({ participants, setParticipants, onStart }: SetupPane
           <span style={{ color: "var(--accent)" }}>One destination.</span>
         </h1>
         <p style={{ fontSize: 15, color: "var(--text-secondary)", margin: "0 0 14px", maxWidth: 440, marginInline: "auto", lineHeight: 1.6 }}>
-          Tell us what everyone likes. Palatable uses real taste data to find a destination and venue everyone will actually enjoy.
+          Group trips are hard. Palatable finds a destination and activity everyone will actually enjoy — powered by real taste data.
         </p>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 28 }}>
           <span style={{ fontSize: 11, color: "var(--text-tertiary)", display: "flex", alignItems: "center", gap: 4 }}>

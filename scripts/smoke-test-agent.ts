@@ -12,7 +12,7 @@ async function main() {
 
   const participants: Participant[] = [
     { id: "1", name: "Diego", tasteAnchors: [{ query: "Coltrane", type: "urn:entity:artist" }, { query: "Le Bernardin", type: "urn:entity:place" }] },
-    { id: "2", name: "Priya", tasteAnchors: [{ query: "Parasite", type: "urn:entity:film" }, { query: "Supreme", type: "urn:entity:brand" }] },
+    { id: "2", name: "Priya", tasteAnchors: [{ query: "Parasite", type: "urn:entity:movie" }, { query: "Supreme", type: "urn:entity:brand" }] },
     { id: "3", name: "Kai", tasteAnchors: [{ query: "Solange", type: "urn:entity:artist" }, { query: "Nobu", type: "urn:entity:place" }] },
   ];
 

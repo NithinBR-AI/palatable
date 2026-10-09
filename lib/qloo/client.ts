@@ -140,8 +140,24 @@ export interface GetInsightsParams {
   signalEntityIds: string[];
   /** Entity IDs to exclude from results (used for reject -> re-negotiate). */
   excludeEntityIds?: string[];
-  /** Fuzzy location scoping, e.g. a destination name, for round-2 place queries. */
-  locationQuery?: string;
+  /** Hard geographic filter — only results inside this locality (e.g. "Tokyo"). Use for venue stage. */
+  filterLocationQuery?: string;
+  /** Minimum popularity percentile (0–1). Filters out obscure/unknown entities. */
+  popularityMin?: number;
+  /** Require results to have this external data source (e.g. "tripadvisor"). Venue stage only. */
+  externalExists?: string;
+  /** Exclude by country/locality name at the API level (e.g. "Brazil"). Comma-separated. */
+  excludeLocationQuery?: string;
+  /** Group results by city/metro for geographic diversity. */
+  diversifyBy?: "properties.geocode.city" | "properties.geocode.metro";
+  /** Max results per city/metro when diversifyBy is set. */
+  diversifyTake?: number;
+  /** Max cross-domain backfill results (default 20). Lower = fewer generic padding results, more genuine signal. */
+  backfillCrossDomain?: number;
+  /** Max content-based backfill results (default 10). */
+  backfillContentBased?: number;
+  /** Bias results toward specific tag IDs (comma-separated). Confirmed to rerank toward attractions. */
+  filterTagIds?: string;
   /** Request per-signal attribution breakdown. Confirmed live 2026-10-05. */
   explainability?: boolean;
   take?: number;
@@ -163,7 +179,15 @@ export async function getInsights(params: GetInsightsParams): Promise<InsightsRe
     "filter.type": params.filterType,
     "signal.interests.entities": params.signalEntityIds.join(","),
     "filter.exclude.entities": (params.excludeEntityIds ?? []).join(","),
-    "signal.location.query": params.locationQuery ?? "",
+    "filter.location.query": params.filterLocationQuery ?? "",
+    "filter.exclude.location.query": params.excludeLocationQuery ?? "",
+    "filter.popularity.min": params.popularityMin !== undefined ? String(params.popularityMin) : "",
+    "filter.external.exists": params.externalExists ?? "",
+    "diversify.by": params.diversifyBy ?? "",
+    "diversify.take": params.diversifyTake ? String(params.diversifyTake) : "",
+    "backfill.cross_domain.take": params.backfillCrossDomain !== undefined ? String(params.backfillCrossDomain) : "",
+    "backfill.content_based.take": params.backfillContentBased !== undefined ? String(params.backfillContentBased) : "",
+    "filter.tag.ids": params.filterTagIds ?? "",
     "feature.explainability": params.explainability ? "true" : "",
     take: String(params.take ?? 5),
   })) as { results: { entities: any[] } };

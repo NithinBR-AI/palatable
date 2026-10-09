@@ -27,6 +27,7 @@ export interface AdvocateInput {
   proposal: InsightsResult;
   rejections: RejectionRecord[];
   history: HistoryMessage[];
+  resolvedAnchors?: { participant: string; entityId: string }[];
 }
 
 /**
@@ -49,20 +50,22 @@ export async function runAdvocate(input: AdvocateInput): Promise<AdvocateResult>
 
   const entityTags = tagProfile[0]?.tags?.map((t) => t.name).join(", ") ?? "no tags available";
 
-  // Map attribution scores back to participant names using resolved anchor entity IDs
+  // Map attribution scores back to participant names via resolvedAnchors (entityId → participant)
+  const anchorMap = new Map<string, string>(); // entityId → participant name
+  for (const a of input.resolvedAnchors ?? []) anchorMap.set(a.entityId, a.participant);
+
   const attributionByParticipant = input.participants.map((p) => {
     const score = input.proposal.explainability
-      ?.filter((a) => p.tasteAnchors.some((anchor) => anchor.entityId === a.entityId))
+      ?.filter((a) => anchorMap.get(a.entityId) === p.name)
       .reduce((sum, a) => sum + a.score, 0) ?? 0;
     return { name: p.name, score };
   });
 
-  // Fall back to raw explainability order if no entityIds resolved on anchors
   const hasResolvedIds = attributionByParticipant.some((a) => a.score > 0);
   const attributionSummary = hasResolvedIds
     ? attributionByParticipant.map((a) => `${a.name}: ${a.score.toFixed(3)}`).join(", ")
     : input.proposal.explainability
-        ?.map((a, i) => `participant_${i + 1} (${a.entityId}): ${a.score.toFixed(3)}`)
+        ?.map((a) => `${anchorMap.get(a.entityId) ?? a.entityId}: ${a.score.toFixed(3)}`)
         .join(", ") ?? "no attribution data";
 
   const scores = hasResolvedIds
@@ -71,8 +74,11 @@ export async function runAdvocate(input: AdvocateInput): Promise<AdvocateResult>
   const gap = scores.length > 1 ? Math.max(...scores) - Math.min(...scores) : 0;
 
   const participantSummary = input.participants
-    .map((p) => `${p.name}: ${p.tasteAnchors.map((a) => a.query).join(", ")}`)
+    .map((p) => `${p.name} (${p.tasteAnchors.length} anchors): ${p.tasteAnchors.map((a) => a.query).join(", ")}`)
     .join("\n");
+
+  const anchorCounts = input.participants.map((p) => p.tasteAnchors.length);
+  const expectedGap = (Math.max(...anchorCounts) - Math.min(...anchorCounts)) * 0.15;
 
   const userMessage = [
     `Stage: ${input.stage}`,
@@ -80,6 +86,7 @@ export async function runAdvocate(input: AdvocateInput): Promise<AdvocateResult>
     `Entity tags: ${entityTags}`,
     `Attribution by participant: ${attributionSummary}`,
     `Attribution gap (max - min): ${gap.toFixed(3)}`,
+    `Expected gap from anchor count imbalance: ${expectedGap.toFixed(3)} (gap within this range is structural, not unfair)`,
     `Participants and taste anchors:\n${participantSummary}`,
     `Respond with ONLY valid JSON (no markdown):
 {

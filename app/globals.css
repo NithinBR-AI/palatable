@@ -1,8 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Palatable — Indigo × Coral × Teal */
+  --bg-base:     #f8f7ff;
+  --bg-surface:  #ffffff;
+  --bg-elevated: #f0effe;
+  --bg-hover:    #e5e2fc;
+  --text-primary:   #1a1730;
+  --text-secondary: #4b4669;
+  --text-tertiary:  #9b97b8;
+  --accent:        #4F46E5;
+  --accent-dim:    #eeedfd;
+  --coral:         #F97066;
+  --coral-dim:     #fff1f0;
+  --teal:          #14B8A6;
+  --teal-dim:      #f0fdfb;
+  --green:         #059669;
+  --green-dim:     #ecfdf5;
+  --red:           #dc2626;
+  --border:        #e4e2f5;
+  --border-strong: #cac6ee;
+
+  color-scheme: light;
+  --background: var(--bg-base);
+  --foreground: var(--text-primary);
 }
 
 @theme inline {
@@ -12,15 +33,62 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+/* ─── Skeleton pulse ────────────────────────────────────────────────────── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ─── Stream log animation ──────────────────────────────────────────────── */
+@keyframes logIn {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.log-line {
+  animation: logIn 0.15s ease forwards;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+.thinking-dot {
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+.thinking-dot:nth-child(2) { animation-delay: 0.15s; }
+.thinking-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* ─── Slide up ──────────────────────────────────────────────────────────── */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.slide-up {
+  animation: slideUp 0.2s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .log-line, .slide-up { animation: none; }
+  .thinking-dot { animation: none; opacity: 0.5; }
 }

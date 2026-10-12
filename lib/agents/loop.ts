@@ -95,7 +95,14 @@ export async function runNegotiationRound(
       stage,
       participants: state.participants,
       rejections: state.rejections,
-      locationQuery: stage === "venue" ? state.chosenDestination?.name : undefined,
+      locationQuery: stage === "venue" && state.chosenDestination
+        ? (() => {
+            const dest = state.chosenDestination!;
+            const cc = dest.geocode?.country_code;
+            const region = dest.geocode?.admin1_region;
+            return (cc === "US" || cc === "CA") && region ? `${dest.name}, ${region}` : dest.name;
+          })()
+        : undefined,
       history: negotiatorHistory,
     });
 

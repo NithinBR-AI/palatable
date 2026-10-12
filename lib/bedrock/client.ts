@@ -51,6 +51,8 @@ function isRetryable(err: unknown): boolean {
     if (/ECONNRESET|ETIMEDOUT|ENOTFOUND|socket hang up/i.test(err.message)) return true;
     // 429 rate limit or 5xx from Mantle
     if (/Mantle HTTP (429|5\d\d)/.test(err.message)) return true;
+    // Truncated / non-JSON response — model cut off mid-output
+    if (/non-JSON|Unexpected end|Unexpected token/i.test(err.message)) return true;
   }
   return false;
 }
@@ -73,6 +75,7 @@ async function callLLM(messages: OAIMessage[], tools: ToolDefinition[]): Promise
     model: MANTLE_MODEL,
     messages,
     temperature: 0.3,
+    max_tokens: 4096,
   };
 
   if (tools.length > 0) {
@@ -193,21 +196,27 @@ export async function runStructuredCompletion<T>(
   userMessage: string,
   history: HistoryMessage[] = [],
 ): Promise<T> {
-  const response = await callLLM(
-    [
-      { role: "system", content: systemPrompt },
-      ...history.map((h) => ({ role: h.role, content: h.content })),
-      { role: "user", content: userMessage },
-    ],
-    [],
-  );
+  const messages: OAIMessage[] = [
+    { role: "system", content: systemPrompt },
+    ...history.map((h) => ({ role: h.role, content: h.content })),
+    { role: "user", content: userMessage },
+  ];
 
-  const raw = (response.content ?? "").trim();
-  // Strip markdown code fences if present
-  const json = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
-  try {
-    return JSON.parse(json) as T;
-  } catch {
-    throw new Error(`Structured completion returned non-JSON: ${raw.slice(0, 200)}`);
+  let lastRaw = "";
+  for (let attempt = 0; attempt <= 2; attempt++) {
+    const response = await callLLM(messages, []);
+    const raw = (response.content ?? "").trim();
+    const json = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
+    try {
+      return JSON.parse(json) as T;
+    } catch {
+      lastRaw = raw;
+      // Truncated response — retry with a nudge
+      if (attempt < 2) {
+        messages.push({ role: "assistant", content: raw });
+        messages.push({ role: "user", content: "Your response was cut off. Please output the complete valid JSON, starting from the beginning." });
+      }
+    }
   }
+  throw new Error(`Structured completion returned non-JSON: ${lastRaw.slice(0, 200)}`);
 }

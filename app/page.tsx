@@ -1,21 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import { LandingPanel } from "@/components/LandingPanel";
+import { ChatPanel } from "@/components/ChatPanel";
 import { SetupPanel } from "@/components/SetupPanel";
 import { NegotiatePanel } from "@/components/NegotiatePanel";
 import { DonePanel } from "@/components/DonePanel";
 import type { Participant, RejectionRecord } from "@/lib/schema/state";
+import type { GroupId } from "@/components/LandingPanel";
 
-export type AppStage = "setup" | "destination" | "venue" | "done";
+export type AppStage = "landing" | "chat" | "setup" | "destination" | "venue" | "done";
 
 export interface AcceptedEntity {
   entityId: string;
   name: string;
   affinity?: number;
+  reasoning?: string;
+  log?: { id: number; status: "pending" | "ok" | "err" | "agent-ok" | "agent-warn"; text: string }[];
 }
 
 export default function Home() {
-  const [stage, setStage] = useState<AppStage>("setup");
+  const [stage, setStage] = useState<AppStage>("landing");
+  const [activeGroupId, setActiveGroupId] = useState<GroupId | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [rejections, setRejections] = useState<RejectionRecord[]>([]);
   const [destination, setDestination] = useState<AcceptedEntity | null>(null);
@@ -53,7 +59,8 @@ export default function Home() {
   };
 
   const reset = () => {
-    setStage("setup");
+    setStage("landing");
+    setActiveGroupId(null);
     setParticipants([]);
     setRejections([]);
     setDestination(null);
@@ -88,11 +95,30 @@ export default function Home() {
 
       {/* Content */}
       <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        {stage === "landing" && (
+          <LandingPanel
+            onSelectGroup={(groupId) => {
+              setActiveGroupId(groupId);
+              setStage("chat");
+            }}
+            onTryYourself={() => setStage("setup")}
+          />
+        )}
+
+        {stage === "chat" && activeGroupId && (
+          <ChatPanel
+            groupId={activeGroupId}
+            onStartNegotiation={(ps) => startNegotiation(ps)}
+            onBack={() => setStage("landing")}
+          />
+        )}
+
         {stage === "setup" && (
           <SetupPanel
             participants={participants}
             setParticipants={setParticipants}
             onStart={startNegotiation}
+            onBack={() => setStage("landing")}
           />
         )}
 
@@ -113,6 +139,10 @@ export default function Home() {
           <DonePanel
             destination={destination}
             venue={venue}
+            destinationReasoning={destination.reasoning}
+            venueReasoning={venue.reasoning}
+            destinationLog={destination.log}
+            venueLog={venue.log}
             onRestart={() => startNegotiation()}
             onReset={reset}
           />

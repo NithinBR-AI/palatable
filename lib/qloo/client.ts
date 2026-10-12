@@ -16,7 +16,8 @@ const RETRY_BASE_MS = 500;
 function isRetryable(err: unknown): boolean {
   if (err instanceof Error) {
     if (/ECONNRESET|ETIMEDOUT|ENOTFOUND|socket hang up/i.test(err.message)) return true;
-    if (/Qloo request failed \((429|5\d\d)\)/.test(err.message)) return true;
+    // Matches both our formatted string and raw API status text
+    if (/429|rate.?limit|too many requests|5\d\d|internal server|bad gateway|service unavailable|gateway timeout/i.test(err.message)) return true;
   }
   return false;
 }
@@ -48,9 +49,8 @@ async function qlooFetch(path: string, params: Record<string, string>): Promise<
     const body = await res.json();
 
     if (!res.ok || body?.errors) {
-      const message =
-        body?.errors?.[0]?.message ?? body?.message ?? `Qloo request failed (${res.status})`;
-      throw new Error(message);
+      const apiMsg = body?.errors?.[0]?.message ?? body?.message ?? "";
+      throw new Error(`Qloo ${res.status}: ${apiMsg || "request failed"}`);
     }
 
     return body;
@@ -131,6 +131,12 @@ export interface InsightsEntityAttribution {
 export interface InsightsResult extends QlooEntity {
   affinity: number;
   explainability?: InsightsEntityAttribution[];
+  geocode?: {
+    name?: string;
+    admin1_region?: string;
+    admin2_region?: string;
+    country_code?: string;
+  };
 }
 
 export interface GetInsightsParams {
@@ -200,6 +206,7 @@ export async function getInsights(params: GetInsightsParams): Promise<InsightsRe
     popularity: e.popularity,
     tags: (e.tags ?? []).map((t: any) => ({ id: t.id, name: t.name, type: t.type })),
     affinity: e.query?.affinity,
+    geocode: e.properties?.geocode ?? undefined,
     explainability: e.query?.explainability?.["signal.interests.entities"]?.map((a: any) => ({
       entityId: a.entity_id,
       score: a.score ?? a.avg_score,

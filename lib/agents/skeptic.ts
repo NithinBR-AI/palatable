@@ -59,7 +59,13 @@ export async function runSkeptic(input: SkepticInput): Promise<SkepticResult> {
 
   const destinationContext =
     input.stage === "venue" && input.chosenDestination
-      ? `Confirmed destination: ${input.chosenDestination.name}. The venue MUST be in or near this destination.`
+      ? (() => {
+          const dest = input.chosenDestination!;
+          const cc = dest.geocode?.country_code;
+          const region = dest.geocode?.admin1_region;
+          const loc = (cc === "US" || cc === "CA") && region ? `${dest.name}, ${region}` : dest.name;
+          return `Confirmed destination: ${loc}. The venue MUST be in or near this destination.`;
+        })()
       : "Destination stage — no confirmed destination yet.";
 
   const userMessage = [

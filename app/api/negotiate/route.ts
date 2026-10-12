@@ -66,9 +66,17 @@ async function resolveAnchors(
   const resolved: ResolvedAnchor[] = [];
   const localityPending: { anchor: { participant: string; query: string }; localityQuery: string }[] = [];
 
+  // Deduplicate by query to avoid redundant Qloo calls (e.g. Bad Bunny mentioned by two people).
+  // Build a lookup map from query → search results, fetched in parallel.
+  const uniqueQueries = [...new Set(allAnchors.map((a) => a.query))];
+  const searchResults = await Promise.all(
+    uniqueQueries.map((q) => searchEntity(q, undefined, 5).catch(() => [])),
+  );
+  const resultsByQuery = new Map(uniqueQueries.map((q, i) => [q, searchResults[i]]));
+
   // First pass: resolve all non-locality anchors. Collect localities for second pass.
   for (const anchor of allAnchors) {
-    const results = await searchEntity(anchor.query, undefined, 5);
+    const results = resultsByQuery.get(anchor.query) ?? [];
     if (!results.length) continue;
 
     let best = results.find((r) => USEFUL_SIGNAL_TYPES.has(r.type));
@@ -195,7 +203,20 @@ export async function POST(req: Request) {
   return makeSSEStream(async (emit) => {
     const history = buildHistory(state);
     const rejections: RejectionRecord[] = state.rejections ?? [];
-    const locationQuery = stage === "venue" ? state.chosenDestination?.name : undefined;
+    // Build a qualified location string to prevent Qloo resolving ambiguous city names to the
+    // wrong country (e.g. "Santa Fe" → Santa Fe, Argentina vs New Mexico).
+    // For US/Canada: always append admin1_region (state/province) — reliable disambiguators.
+    // For other countries: bare city name is sufficient — Qloo resolves to most-popular globally,
+    // and region labels like "Capital Region" or "Northeast" are not useful qualifiers.
+    const locationQuery = (() => {
+      if (stage !== "venue" || !state.chosenDestination) return undefined;
+      const dest = state.chosenDestination;
+      const countryCode = dest.geocode?.country_code;
+      const region = dest.geocode?.admin1_region;
+      return (countryCode === "US" || countryCode === "CA") && region
+        ? `${dest.name}, ${region}`
+        : dest.name;
+    })();
 
     const resolvedAnchors = await resolveAnchors(participants, emit);
     // Only send non-weak anchors as signals — weak types (author, book, etc.) 400 the API.

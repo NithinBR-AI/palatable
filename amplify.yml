@@ -3,6 +3,7 @@ frontend:
   phases:
     preBuild:
       commands:
+        - export NODE_OPTIONS='--max-old-space-size=6000'
         - npm ci
     build:
       commands:

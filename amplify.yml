@@ -4,6 +4,8 @@ frontend:
     preBuild:
       commands:
         - npm config set registry https://registry.npmjs.org
+        - npm config get registry
+        - cat ~/.npmrc
         - export NODE_OPTIONS='--max-old-space-size=6000'
         - npm install --legacy-peer-deps --loglevel verbose
     build:

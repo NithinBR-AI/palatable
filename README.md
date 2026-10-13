@@ -81,6 +81,8 @@ Results stream live over SSE — each agent's output appears as it completes.
 
 ## Architecture
 
+> Full architecture details — agent coordination pattern, data model, SSE events, guardrails, LLM inference patterns: [docs/architecture.md](docs/architecture.md)
+
 ```
 Browser (Next.js SSR)
     │

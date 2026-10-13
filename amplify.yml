@@ -3,7 +3,6 @@ frontend:
   phases:
     preBuild:
       commands:
-        - nvm use 20
         - npm config set registry https://registry.npmjs.org
         - export NODE_OPTIONS='--max-old-space-size=6000'
         - npm install --legacy-peer-deps --loglevel verbose

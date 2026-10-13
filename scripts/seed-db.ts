@@ -22,29 +22,29 @@ const client = new DynamoDBClient({
 const TABLE_DEFINITIONS = [
   {
     TableName: TABLES.GROUPS,
-    KeySchema: [{ AttributeName: "groupId", KeyType: "HASH" }],
-    AttributeDefinitions: [{ AttributeName: "groupId", AttributeType: "S" }],
+    KeySchema: [{ AttributeName: "groupId", KeyType: "HASH" as const }],
+    AttributeDefinitions: [{ AttributeName: "groupId", AttributeType: "S" as const }],
   },
   {
     TableName: TABLES.MESSAGES,
     KeySchema: [
-      { AttributeName: "groupId", KeyType: "HASH" },
-      { AttributeName: "sortKey", KeyType: "RANGE" },
+      { AttributeName: "groupId", KeyType: "HASH" as const },
+      { AttributeName: "sortKey", KeyType: "RANGE" as const },
     ],
     AttributeDefinitions: [
-      { AttributeName: "groupId", AttributeType: "S" },
-      { AttributeName: "sortKey", AttributeType: "S" },
+      { AttributeName: "groupId", AttributeType: "S" as const },
+      { AttributeName: "sortKey", AttributeType: "S" as const },
     ],
   },
   {
     TableName: TABLES.ANCHORS,
     KeySchema: [
-      { AttributeName: "participantId", KeyType: "HASH" },
-      { AttributeName: "extractedAt", KeyType: "RANGE" },
+      { AttributeName: "participantId", KeyType: "HASH" as const },
+      { AttributeName: "extractedAt", KeyType: "RANGE" as const },
     ],
     AttributeDefinitions: [
-      { AttributeName: "participantId", AttributeType: "S" },
-      { AttributeName: "extractedAt", AttributeType: "S" },
+      { AttributeName: "participantId", AttributeType: "S" as const },
+      { AttributeName: "extractedAt", AttributeType: "S" as const },
     ],
   },
 ];

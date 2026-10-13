@@ -122,8 +122,14 @@ export function ChatPanel({ groupId, onStartNegotiation, onBack }: ChatPanelProp
         }),
       });
 
-      const json = await res.json() as { anchors: ExtractedAnchor[] };
+      const json = await res.json() as {
+        anchors: ExtractedAnchor[];
+        warnings: { participantId: string; participantName: string; level: "warn" | "no_signal" }[];
+        blocked: boolean;
+      };
       const anchors = json.anchors ?? [];
+      const warnings = json.warnings ?? [];
+      const blocked = json.blocked ?? false;
       setExtractedAnchors(anchors);
 
       // Build taste profile per participant
@@ -137,20 +143,45 @@ export function ChatPanel({ groupId, onStartNegotiation, onBack }: ChatPanelProp
         profileStrings[pid] = items.slice(0, 4).join(", ");
       }
       setTasteProfiles(profileStrings);
+
+      // Build warning lines for participants with weak/missing signal
+      const warningLines = warnings.map((w) =>
+        w.level === "no_signal"
+          ? `⚠ ${w.participantName}: no taste signals found — their preferences won't be reflected`
+          : `⚠ ${w.participantName}: only general preferences found — results may not fully reflect their taste`
+      );
+
+      if (blocked) {
+        // Hard block: zero anchors from entire group
+        setMessages((prev) => [...prev.filter((m) => m.sortKey !== "thinking"), {
+          groupId,
+          sortKey: `palatable-blocked`,
+          participantId: "palatable",
+          participantName: "Palatable",
+          text: `I couldn't pick up any taste signals from your group's chat.\n\nTry sharing more about what you're into — music, films, brands, activities — and ask again.`,
+          timestamp: new Date().toISOString(),
+          processed: true,
+          isPalatable: true,
+        }]);
+        return;
+      }
+
       setAnchorsReady(true);
 
-      // Replace thinking message with taste summary
+      // Replace thinking message with taste summary + any warnings
       const summaryLines = participants
         .map((p) => profileStrings[p.id] ? `${p.name}: ${profileStrings[p.id]}` : null)
         .filter(Boolean)
         .join("\n");
+
+      const warningSection = warningLines.length > 0 ? `\n\n${warningLines.join("\n")}` : "";
 
       const summaryMsg: ChatMessage = {
         groupId,
         sortKey: `palatable-summary`,
         participantId: "palatable",
         participantName: "Palatable",
-        text: `I've been listening 👂\n\nHere's what I know about your group:\n${summaryLines}\n\nReady to find where you should go. Tap "Plan our trip" to start.`,
+        text: `I've been listening 👂\n\nHere's what I know about your group:\n${summaryLines}${warningSection}\n\nReady to find where you should go. Tap "Plan our trip" to start.`,
         timestamp: new Date().toISOString(),
         processed: true,
         isPalatable: true,

@@ -4,6 +4,8 @@
 export type StreamEventType =
   | "anchors_resolving"
   | "anchors_resolved"
+  | "anchor_warning"
+  | "low_signal_warning"
   | "negotiator_thinking"
   | "negotiator_proposed"
   | "advocate_thinking"

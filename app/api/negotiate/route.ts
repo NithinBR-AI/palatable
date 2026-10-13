@@ -8,7 +8,7 @@ import { join } from "node:path";
 import type { Participant, NegotiationStage, RejectionRecord, ConsensusState } from "@/lib/schema/state";
 import type { InsightsResult } from "@/lib/qloo/client";
 import type { HistoryMessage } from "@/lib/bedrock/client";
-import { checkRateLimit } from "@/lib/guardrails";
+import { checkRateLimit, checkAffinityFloor, findZeroAttributionParticipants } from "@/lib/guardrails";
 
 const NEGOTIATOR_PROMPT = readFileSync(join(process.cwd(), "lib/prompts/negotiator.txt"), "utf-8");
 const MAX_CRITIQUE_ROUNDS = 2;
@@ -288,7 +288,11 @@ export async function POST(req: Request) {
         }
       }
 
-      if (candidates.length === 0) throw new Error("No candidates returned from Qloo");
+      if (candidates.length === 0) {
+        emit({ type: "low_signal_warning", payload: { message: "Qloo couldn't find matches for this group's taste profile in the current location. Try a different destination or add more taste signals." } });
+        emit({ type: "error", payload: { message: "No candidates found — try adding more specific taste signals (artists, films, brands)." } });
+        return;
+      }
 
       const candidateSummary = candidates.map((c) => {
         const attribution = c.explainability?.map((a) => {
@@ -335,11 +339,24 @@ export async function POST(req: Request) {
         },
       });
 
-      // Fast-path check
       // Compute per-participant attribution by summing their anchors' scores.
       const anchorsByParticipant = new Map(
         participants.map((p) => [p.name, resolvedAnchors.filter((a) => a.participant === p.name)])
       );
+
+      // Guardrail: affinity floor check
+      const { warning: affinityWarning } = checkAffinityFloor(entity, critiquePass);
+      if (affinityWarning) {
+        emit({ type: "low_signal_warning", payload: { message: affinityWarning } });
+      }
+
+      // Guardrail: zero-attribution participant check
+      const zeroAttributionNames = findZeroAttributionParticipants(entity, participants, anchorsByParticipant);
+      if (zeroAttributionNames.length > 0) {
+        emit({ type: "anchor_warning", payload: { participants: zeroAttributionNames, message: `${zeroAttributionNames.join(", ")}'s taste signals didn't influence this pick — their anchors may not have strong cross-domain signal.` } });
+      }
+
+      // Fast-path check
       const participantScores = participants.map((p) => {
         const anchors = anchorsByParticipant.get(p.name) ?? [];
         return entity.explainability

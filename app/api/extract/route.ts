@@ -1,5 +1,5 @@
 import { extractAnchors, type RawMessage } from "@/lib/extract/anchors";
-import { checkRateLimit } from "@/lib/guardrails";
+import { checkRateLimit, checkAnchorQuality } from "@/lib/guardrails";
 
 interface RequestBody {
   messages: RawMessage[];
@@ -34,7 +34,10 @@ export async function POST(req: Request) {
 
   try {
     const anchors = await extractAnchors(body.messages, body.persist ?? true);
-    return new Response(JSON.stringify({ anchors }), {
+
+    const { warnings, blocked } = checkAnchorQuality(anchors, body.messages);
+
+    return new Response(JSON.stringify({ anchors, warnings, blocked }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });

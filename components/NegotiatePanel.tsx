@@ -185,6 +185,17 @@ export function NegotiatePanel({
               }
               break;
             }
+            case "anchor_warning": {
+              const names = get<string[]>(event.payload, "participants") ?? [];
+              const msg = get<string>(event.payload, "message") ?? "";
+              addLog({ status: "agent-warn", text: `⚠ ${names.join(", ")}: taste signals didn't influence this pick`, tooltip: msg });
+              break;
+            }
+            case "low_signal_warning": {
+              const msg = get<string>(event.payload, "message") ?? "";
+              addLog({ status: "agent-warn", text: `⚠ Low confidence: ${msg}`, tooltip: msg });
+              break;
+            }
             case "critique_revising":
               addLog({ status: "pending", text: "One agent disagreed — trying again…", tooltip: "When the skeptic or advocate flags a problem, the negotiator picks a new candidate." });
               break;
@@ -337,18 +348,21 @@ export function NegotiatePanel({
             <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 6 }}>
               {participants.map((p, idx) => {
                 const chips = anchorsByPerson[p.name] ?? [];
-                if (chips.length === 0) return null;
                 return (
                   <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     <div style={{ width: 18, height: 18, borderRadius: "50%", background: AVATAR_COLORS[String(idx % 6)], display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
                       {p.name[0]}
                     </div>
                     <span style={{ fontSize: 10, fontWeight: 600, color: "var(--text-secondary)", fontFamily: "var(--font-geist-mono)", flexShrink: 0 }}>{p.name}</span>
-                    {chips.map((chip) => (
+                    {chips.length > 0 ? chips.map((chip) => (
                       <span key={chip} style={{ fontSize: 10, padding: "1px 6px", borderRadius: 3, background: "var(--bg-elevated)", border: "1px solid var(--border)", color: "var(--text-tertiary)", fontFamily: "var(--font-geist-mono)" }}>
                         {chip}
                       </span>
-                    ))}
+                    )) : (
+                      <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 3, background: "var(--bg-elevated)", border: "1px dashed var(--border)", color: "var(--text-tertiary)", fontFamily: "var(--font-geist-mono)", fontStyle: "italic" }}>
+                        vibe signals only
+                      </span>
+                    )}
                   </div>
                 );
               })}

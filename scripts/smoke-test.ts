@@ -46,7 +46,7 @@ async function main() {
   const venues = await getInsights({
     filterType: "urn:entity:place",
     signalEntityIds: [nobu[0].entityId, katsuya[0].entityId],
-    locationQuery: chosen.name,
+    filterLocationQuery: chosen.name,
     explainability: true,
     take: 3,
   });

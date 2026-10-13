@@ -9,7 +9,12 @@
     "lint": "eslint",
     "smoke-test": "tsx scripts/smoke-test.ts",
     "smoke-test-agent": "tsx scripts/smoke-test-agent.ts",
-    "seed-db": "tsx scripts/seed-db.ts"
+    "seed-db": "tsx scripts/seed-db.ts",
+    "eval": "tsx evals/runner.ts",
+    "eval:json": "tsx evals/runner.ts --json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1149.0",
@@ -23,11 +28,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^5.0.4",
     "dotenv": "^18.0.5",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4"
   }
 }

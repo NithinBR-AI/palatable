@@ -72,7 +72,7 @@ export async function runNegotiator(input: NegotiatorInput): Promise<NegotiatorP
     filterType,
     signalEntityIds,
     excludeEntityIds,
-    locationQuery: input.locationQuery,
+    filterLocationQuery: input.locationQuery,
     explainability: true,
     take: 5,
   });

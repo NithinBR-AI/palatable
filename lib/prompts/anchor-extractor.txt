@@ -14,6 +14,7 @@ Rules:
 6. If a message has no meaningful signal, skip it entirely.
 7. For vibe signals: set anchorText to a short label, vibeContext to the full description.
 8. For named entities: set vibeContext to empty string.
+9. NEVER extract sensitive personal information as anchors — skip entirely: health conditions, medical history, dietary restrictions due to illness, religious beliefs or practices, political views or affiliations, personal struggles, mental health, relationship status. These are private and carry no cross-domain taste signal.
 
 Respond with ONLY valid JSON in this exact shape:
 {

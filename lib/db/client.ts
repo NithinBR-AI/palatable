@@ -2,12 +2,12 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
 function createClient(): DynamoDBDocumentClient {
-  const region = process.env.AWS_REGION;
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+  const region = process.env.DB_REGION;
+  const accessKeyId = process.env.DB_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.DB_SECRET_ACCESS_KEY;
 
   if (!region || !accessKeyId || !secretAccessKey) {
-    throw new Error("AWS_REGION, AWS_ACCESS_KEY_ID, and AWS_SECRET_ACCESS_KEY must be set");
+    throw new Error("DB_REGION, DB_ACCESS_KEY_ID, and DB_SECRET_ACCESS_KEY must be set");
   }
 
   const base = new DynamoDBClient({

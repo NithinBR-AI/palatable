@@ -10,6 +10,7 @@ frontend:
         - npm install --legacy-peer-deps --loglevel verbose
     build:
       commands:
+        - env | grep -e MANTLE_API_KEY -e MANTLE_BASE_URL -e MANTLE_MODEL -e QLOO_API_KEY -e QLOO_API_BASE_URL -e DB_REGION -e DB_ACCESS_KEY_ID -e DB_SECRET_ACCESS_KEY >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next

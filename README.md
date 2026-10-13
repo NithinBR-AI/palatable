@@ -1,22 +1,28 @@
 # Palatable
 
-**Your group chat already knows what everyone likes. Nobody's doing anything with it.**
+Alex wants somewhere with a good music scene and interesting food. Zara is done with tourist traps and needs natural wine somewhere. Marcus will go anywhere as long as there's hiking. Nina just sent a voice note saying she doesn't care but then vetoed the last four suggestions.
 
-**Palatable is a persistent group chat app that owns taste data.** Every conversation builds a shared taste profile for the group — who likes what, how strongly, and how that changes over time. When the group is ready to plan anything — a trip, a restaurant, a night out, a concert — Palatable already knows everyone's taste and negotiates a recommendation the group can actually agree on.
+This is every group trip. Four people, four completely different ideas of a good time, and a group chat that's been going for three days without landing anywhere.
 
-**The vision: one app for every group decision Qloo's taste graph supports.** Travel today. Restaurant tonight. Concert next week. All powered by the same taste memory that accumulates with every message, every accept, every veto. Most Qloo integrations query transiently — ask once, get an answer, forget the user. **Palatable accumulates signal. That's the moat.**
+**Palatable solves this.** It reads what everyone is actually into — the artists they mention, the places they've been, the food they keep bringing up — maps those signals to Qloo's taste graph, and runs three AI agents (a Negotiator, an Advocate, and a Skeptic) to find the place the whole group can genuinely agree on. Not a compromise. An actual answer.
 
-**And every accept and reject feeds back to improve Qloo's taste graph itself.** The more groups use Palatable, the better Qloo gets at predicting taste across culture, context, and group dynamics. That feedback loop — group decisions improving the underlying taste model — is what makes this a platform, not a feature.
+You can watch it work on a real group, or describe your own group and get a live recommendation.
 
-The hackathon demo is the proof-of-concept for that world.
+Built for the **Qloo Hackathon · 2026**.
 
 ---
 
-**We've been in this group chat for three days and we still can't agree on a restaurant. Every suggestion starts an argument.**
+## The Vision
 
-Palatable solves group taste negotiation. Drop in a seeded chat between friends with real opinions, or start a fresh group and let the system learn your taste signals — then watch four AI agents negotiate, score trade-offs, and surface the destination everyone can actually agree on.
+This hackathon demo solves travel planning for one group. The bigger product is something more fundamental.
 
-Built for the **Qloo Hackathon · 2026**.
+**A persistent group chat app that owns taste data.** Every conversation — every artist mention, every restaurant someone loved, every place someone vetoed — builds a shared taste profile for the group. Anchors accumulate, reinforce, and evolve over time. When the group is ready to plan anything, Palatable already knows everyone's taste and negotiates on their behalf without anyone filling out a form.
+
+**Any decision Qloo's taste graph supports.** Travel today. Restaurant tonight. Concert next week. The same extraction pipeline, the same agents, the same Qloo affinities — just different entity types. The demo is one use case. The architecture is general.
+
+**A feedback loop that improves Qloo itself.** Every group accept and reject is a taste signal. When a group picks Lisbon over Barcelona, that tells Qloo something about how those specific taste anchors translate into real decisions. Routed back to the model, it makes Qloo smarter — not just for this group, but for every group with overlapping signals.
+
+Most Qloo integrations query transiently — ask once, get an answer, forget the user. **Palatable accumulates signal. That's the moat.**
 
 ---
 
@@ -26,9 +32,9 @@ Live app: **https://main.dxuglnvypubxp.amplifyapp.com**
 
 Two experiences at the start screen:
 
-**Seeded Demo** — A pre-loaded chat between four friends planning a group trip. Taste anchors are already extracted. Hit "Get Suggestions" and watch the four-agent pipeline run live over SSE.
+**See it in action** — Three pre-built groups, each with a distinct taste profile (indie film + Japanese food, live music + street food + outdoor adventures, fine dining + contemporary art + design hotels). Pick a group, scroll through their real chat conversations, and ask Palatable where they should go. The Negotiator, Advocate, and Skeptic agents debate live over SSE — each working from Qloo affinity scores built from what the group actually talked about.
 
-**Try It Yourself** — Start a fresh group, paste any group chat text (or type directly), and the system extracts taste anchors from the conversation before negotiating.
+**Try it yourself** — Add each person in your group by name and describe them in a few sentences: what music they're into, food they love, places they've been, vibes they chase. Palatable extracts taste anchors from those descriptions — the same way it would from weeks of group chat, just faster — then runs the full Qloo → negotiation → synthesis pipeline to find where your group should go.
 
 Both use the live Qloo Insights API. No mock data on the suggestion path.
 
@@ -36,39 +42,40 @@ Both use the live Qloo Insights API. No mock data on the suggestion path.
 
 ## How It Works
 
-Someone pastes a group chat. The system reads it, extracts what each person actually likes — artists they mention, places they've been, vibes they describe — and maps those signals to Qloo entities. Then four agents negotiate on everyone's behalf.
+Someone describes their group (or picks a seeded demo). The system extracts what each person is into, maps those signals to Qloo entities, and runs three agents that negotiate on everyone's behalf.
 
 ```
-Group Chat Text
+Participant descriptions (freeform text about tastes, artists, places, vibes)
       │
       ▼
   [01] Extraction Agent
-      │  Reads messages, extracts taste anchors per participant
+      │  Reads descriptions, extracts taste anchors per participant
       │  Maps to Qloo entity IDs (artists, venues, cuisines, places)
-      │  Assigns confidence 0–1; skips noise ("haha ok")
+      │  Assigns confidence 0–1; skips noise
       │
   [01a] Content Safety Guard
       │  Screens extracted anchors before they enter the pipeline
       │
       ▼
   [02] Qloo Insights API
-      │  Pulls destination affinities for each participant's taste profile
-      │  Returns scored candidates with cross-taste reasoning
+      │  Resolves anchors to entity IDs via search
+      │  Pulls destination affinities using the resolved signal set
+      │  Returns scored candidates with per-participant attribution
       │
       ▼
-  [03] Trade-off Negotiation Agent
-      │  Scores each candidate against all participants
-      │  Applies veto rules (hard dislikes eliminate a candidate)
-      │  Produces ranked shortlist with per-person reasoning
+  [03] Negotiation Loop (Negotiator + Advocate + Skeptic)
+      │  Negotiator picks the best Qloo candidate with reasoning
+      │  Advocate + Skeptic critique in parallel (fairness + structural)
+      │  If either pushes back, Negotiator revises with critique context
+      │  Loop repeats up to 2 rounds, then surfaces to user
       │
       ▼
-  [04] Synthesis Agent
-        Writes the final recommendation
-        Explains why each person will like it
-        Surfaces the honest trade-offs
+  [04] Final Recommendation
+        Synthesis — where to go, why each person will like it,
+        honest trade-offs surfaced
 ```
 
-Results stream live over SSE — each agent's output appears as it completes, not after the whole pipeline finishes.
+Results stream live over SSE — each agent's output appears as it completes.
 
 ---
 
@@ -77,10 +84,9 @@ Results stream live over SSE — each agent's output appears as it completes, no
 ```
 Browser (Next.js SSR)
     │
-    ├── /api/extract      — Extraction Agent (OpenAI-compatible via AWS Mantle)
-    ├── /api/suggestions  — Qloo Insights API → Trade-off Agent → Synthesis Agent
-    │       │
-    │       └── SSE stream (one event per agent completion)
+    ├── /api/extract      — Extraction Agent (AWS Mantle → deepseek.v3.2)
+    ├── /api/negotiate    — Qloo → Negotiator + Advocate + Skeptic loop (SSE)
+    ├── /api/llm-only     — Side-by-side: same negotiation without Qloo (no taste graph)
     │
     ├── DynamoDB
     │       ├── palatable-groups     — Group metadata, participant list
@@ -90,7 +96,7 @@ Browser (Next.js SSR)
     └── AWS Amplify (SSR deployment)
 ```
 
-All LLM inference goes through AWS Mantle (`deepseek.v3.2` via OpenAI-compatible endpoint). Qloo Insights API provides the taste graph — destination affinities, cross-entity signals, and cultural resonance that a generic LLM can't match.
+All LLM inference goes through AWS Mantle (`deepseek.v3.2`, OpenAI-compatible endpoint). Qloo Insights API provides the taste graph — destination affinities, cross-entity signals, and cultural resonance a generic LLM cannot replicate.
 
 ---
 
@@ -98,45 +104,51 @@ All LLM inference goes through AWS Mantle (`deepseek.v3.2` via OpenAI-compatible
 
 Generic LLMs suggest Paris, Tokyo, New York — the same ten cities for every group. Palatable knows this group would love Lisbon because two participants are on a fado kick, one keeps mentioning natural wine bars, and the fourth has been talking about Pessoa for months.
 
-That specificity comes from Qloo's taste graph. When we call `/v2/insights/ql:type:destination` with each participant's extracted entity affinities, we get scored candidates that account for cultural taste signals — not just stated preferences. A group with a Khruangbin fan and an Hiatus Kaiyote listener gets different destination scores than a group whose taste anchors are entirely mainstream pop.
-
-The negotiation layer is what surfaces the compromise: one agent per participant's interests, arbitrated by a trade-off scorer that applies group veto logic before the synthesis agent writes the final recommendation.
-
----
-
-## Taste Anchor Extraction
-
-Extraction is the core technical bet. A taste anchor is a stable signal about what someone likes — not a one-off comment, but a repeated or emphatic preference that predicts future choices.
-
-Each anchor has:
-- **Entity ID** — mapped to a Qloo entity (artist, venue, cuisine, place) when possible
-- **Vibe context** — freeform signals that don't map to a Qloo entity ("really into brutalist architecture right now")
-- **Confidence** — starts at 0.5, reinforced when the participant repeats the signal, reduced on contradiction
-- **Lifecycle status** — `active`, `deprecated`, or `contradicted`
-
-The extraction prompt classifies each message against five signal types:
-- **No signal** — skip
-- **New anchor** — add at confidence 0.5
-- **Reinforced anchor** — bump confidence
-- **Changed anchor** — deprecate old, add new
-- **Contradicted anchor** — reduce confidence or mark contradicted
-
-Only `active` anchors above confidence 0.6 enter the negotiation pipeline.
+That specificity comes from Qloo's taste graph. Every negotiation runs **two paths simultaneously**: the Qloo-powered recommendation on the right, and an **"AI ONLY" baseline on the left** — same group, same taste anchors, plain LLM with no Qloo data. Both fire automatically when the panel loads. You watch them arrive side by side: Qloo returns a culturally specific, affinity-scored pick with per-person attribution; the LLM-only path returns a generic guess with no scoring. Qloo is the product, not decoration — and the comparison proves it in real time.
 
 ---
 
 ## Agent Pipeline
 
-Each agent runs a real agentic tool-use loop. The LLM receives tool definitions, decides which to call, receives results, and continues until it produces a final response. No hardcoded function chains.
+Four agents in a structured negotiation loop. Each agent makes a single, focused LLM call with pre-assembled Qloo data — the complexity is in the coordination, not inside each agent.
 
-| Agent | Input | Output |
+| Agent | Role |
+|---|---|
+| **Negotiator** | Resolves taste anchors via Qloo search, fetches destination affinities, picks the best candidate and writes reasoning |
+| **Advocate** | Pre-fetches the entity's tag profile from Qloo, computes per-participant attribution, assesses fairness in one structured call |
+| **Skeptic** | Pre-fetches the entity's tag profile, checks rejection history and scope, vetoes or approves in one structured call |
+| **Synthesis** | Writes the final recommendation with per-person reasoning and honest trade-offs |
+
+The coordination pattern: Negotiator proposes → Advocate + Skeptic critique in parallel → if either pushes back, Negotiator gets the critique as context and revises → repeat up to 2 rounds before surfacing to the user.
+
+The content safety guard runs after extraction, before the negotiation loop — anchor content is screened before it enters any agent.
+
+---
+
+## Taste Anchor Extraction
+
+A taste anchor is a signal about what someone likes — an artist they mention, a food vibe they describe, a place they keep bringing up.
+
+Each anchor has:
+- **Entity ID** — mapped to a Qloo entity (artist, movie, TV show, brand, place) when possible, using priority-ordered type resolution to pick the best match
+- **Vibe context** — freeform signals that don't map to a Qloo entity ("rooftop bars", "street food", "live music")
+- **Confidence** — starts at 0.5; the data model supports reinforcement and contradiction updates (Stage 2 feature)
+- **Lifecycle status** — `active`, `deprecated`, or `contradicted` — currently all extractions start as `active`
+
+The extraction prompt classifies each mention as either a `named_entity` (artist, band, film, TV show, global brand, public figure) or a `vibe` (descriptive preference). Named entities are resolved to Qloo entity IDs via search; vibe signals enter the pipeline as freeform context. Only named-entity anchors that resolve to a Qloo ID with cross-domain taste signal contribute to destination affinities.
+
+---
+
+## Guardrails
+
+Four defensive layers in `lib/guardrails/` that run before data enters the pipeline:
+
+| Guardrail | File | What it does |
 |---|---|---|
-| **Extraction** | Raw chat text + participant list | Taste anchors per participant with entity IDs and confidence scores |
-| **Qloo Query** | Participant anchor sets | Destination affinities from Qloo Insights API |
-| **Trade-off Negotiation** | Qloo scores + anchor weights | Ranked shortlist with per-person reasoning and veto flags |
-| **Synthesis** | Shortlist + reasoning | Final recommendation with honest trade-off narrative |
-
-The content safety guard runs after extraction, before Qloo queries — it screens anchor content before anything enters the negotiation pipeline.
+| **Content safety** | `contentSafety.ts` | Screens extracted anchor text for harmful content before Qloo query |
+| **Anchor quality** | `anchorQuality.ts` | Filters low-signal anchors — too short, too vague, or noise |
+| **Signal floor** | `signalFloor.ts` | Rejects participant profiles with too few anchors to negotiate meaningfully |
+| **Rate limiting** | `rateLimit.ts` | Per-IP rate limiting on API routes — prevents runaway LLM spend |
 
 ---
 
@@ -148,9 +160,9 @@ Three DynamoDB tables:
 |---|---|---|
 | `palatable-groups` | `groupId` | Group metadata, participant list, created timestamp |
 | `palatable-messages` | `groupId` + `timestamp#messageId` | Raw messages, sender, processed flag |
-| `palatable-anchors` | `participantId` + `extractedAt` | Taste anchors — entity ID, entity type, vibe context, confidence, lifecycle status |
+| `palatable-anchors` | `participantId` + `extractedAt` | Taste anchors — entity ID, type, vibe context, confidence, lifecycle |
 
-Anchors accumulate over time. Each extraction run adds new anchors and updates confidence on existing ones. The table is the group's taste memory — it persists across sessions.
+Anchors accumulate over time. Each extraction run adds new anchors and updates confidence on existing ones — the table is the group's taste memory.
 
 ---
 
@@ -164,7 +176,6 @@ Anchors accumulate over time. Each extraction run adds new anchors and updates c
 | **Database** | Amazon DynamoDB (3 tables) |
 | **Streaming** | Server-Sent Events (SSE) |
 | **Deployment** | AWS Amplify (SSR) |
-| **Content safety** | AWS Bedrock Guardrails |
 
 ---
 
@@ -174,27 +185,80 @@ Anchors accumulate over time. Each extraction run adds new anchors and updates c
 palatable/
 ├── app/
 │   ├── api/
-│   │   ├── extract/route.ts        # Extraction agent — taste anchor parsing
-│   │   └── suggestions/route.ts    # Qloo → trade-off → synthesis pipeline (SSE)
-│   ├── globals.css                 # Design system — Palatable light theme tokens
-│   └── page.tsx                    # Landing page — seeded demo + try-it-yourself entry points
+│   │   ├── extract/route.ts         # Extraction agent — taste anchor parsing from chat
+│   │   ├── negotiate/route.ts       # Negotiator + Advocate + Skeptic loop (SSE)
+│   │   └── llm-only/route.ts        # Side-by-side: negotiation without Qloo
+│   ├── globals.css                  # Design system — Palatable light theme tokens
+│   ├── layout.tsx
+│   └── page.tsx                     # Landing — seeded demo + try-it-yourself
 ├── components/
-│   ├── ChatPanel.tsx               # Group chat display, message input
-│   ├── LandingPanel.tsx            # Entry point — demo selection, group setup
-│   ├── ResultsPanel.tsx            # SSE stream consumer — live agent output display
-│   └── TastePanel.tsx              # Extracted anchor visualization per participant
+│   ├── AgentVerdict.tsx             # Individual agent output card
+│   ├── ChatPanel.tsx                # Group chat display and message input
+│   ├── DonePanel.tsx                # Final recommendation display
+│   ├── LandingPanel.tsx             # Entry point — demo selection, group setup
+│   ├── LLMToggle.tsx                # Qloo vs LLM-only side-by-side toggle
+│   ├── NegotiatePanel.tsx           # Negotiation phase UI
+│   ├── NegotiationStream.tsx        # SSE stream consumer — live agent output
+│   ├── ParticipantEntry.tsx         # Per-participant taste anchor display
+│   ├── ProposalCard.tsx             # Destination proposal card
+│   ├── SampleScenarioButton.tsx     # Loads a seeded chat scenario
+│   └── SetupPanel.tsx               # Group setup — participants, chat input
+├── data/
+│   ├── seed-chat.ts                 # Seeded demo chat — mixed tastes group
+│   ├── seed-chat-adventure.ts       # Seeded demo — adventure/outdoor group
+│   └── seed-chat-luxury.ts          # Seeded demo — luxury travel group
 ├── lib/
-│   ├── db.ts                       # DynamoDB client — read/write anchors, groups, messages
-│   ├── extraction.ts               # Extraction agent — LLM prompt + anchor classification
-│   ├── qloo.ts                     # Qloo Insights API client
-│   └── agents/
-│       ├── tradeoff.ts             # Trade-off negotiation agent
-│       └── synthesis.ts            # Synthesis agent — final recommendation writer
-├── evals/                          # Behavioral eval suites (excluded from prod build)
-├── tests/                          # Unit tests (excluded from prod build)
-├── amplify.yml                     # Amplify build config — registry override, SSR artifacts
-├── .npmrc                          # Public npm registry (overrides Intuit internal)
-└── .env.example                    # Required environment variables
+│   ├── agents/
+│   │   ├── advocate.ts              # Advocate agent — argues for best-fit candidates
+│   │   ├── loop.ts                  # Shared agentic tool-use loop engine
+│   │   ├── negotiator.ts            # Negotiator agent — proposes based on Qloo scores
+│   │   └── skeptic.ts               # Skeptic agent — vetoes, challenges, stress-tests
+│   ├── bedrock/
+│   │   └── client.ts                # AWS Mantle client — LLM inference, retry logic
+│   ├── db/
+│   │   ├── anchors.ts               # DynamoDB read/write for taste anchors
+│   │   ├── client.ts                # DynamoDB client setup
+│   │   └── schema.ts                # Table definitions
+│   ├── extract/
+│   │   └── anchors.ts               # Anchor extraction logic — LLM prompt + classification
+│   ├── guardrails/
+│   │   ├── anchorQuality.ts         # Filters low-signal anchors
+│   │   ├── contentSafety.ts         # Content safety screening
+│   │   ├── index.ts                 # Barrel export
+│   │   ├── rateLimit.ts             # Per-IP rate limiting
+│   │   └── signalFloor.ts           # Minimum signal threshold guard
+│   ├── prompts/
+│   │   ├── advocate.txt             # Advocate agent system prompt
+│   │   ├── anchor-extractor.txt     # Extraction agent system prompt
+│   │   ├── content-safety.txt       # Content safety classifier prompt
+│   │   ├── negotiator.txt           # Negotiator agent system prompt
+│   │   └── skeptic.txt              # Skeptic agent system prompt
+│   ├── qloo/
+│   │   └── client.ts                # Qloo Insights API client
+│   ├── schema/
+│   │   └── state.ts                 # Shared type definitions — anchors, proposals, state
+│   └── stream.ts                    # SSE stream helpers
+├── scripts/
+│   ├── seed-db.ts                   # Seeds DynamoDB with demo group data
+│   ├── smoke-test.ts                # End-to-end smoke test — DB, extraction, negotiation
+│   └── smoke-test-agent.ts          # Agent-level smoke test
+├── evals/
+│   ├── runner.ts                    # Eval runner — executes all suites, prints pass/fail
+│   ├── fixtures/
+│   │   ├── eval-bookclub.ts         # Book club group fixture
+│   │   └── eval-weekendwarriors.ts  # Weekend warriors group fixture
+│   └── suites/
+│       ├── consensus.ts             # Negotiation consensus correctness
+│       └── content-safety.ts        # Content safety guardrail behavioral tests
+├── tests/
+│   ├── agents/                      # Unit tests — advocate, loop, negotiator, skeptic
+│   ├── api/                         # API route tests — extract
+│   ├── guardrails/                  # Guardrail tests — anchorQuality, contentSafety, rateLimit, signalFloor
+│   └── lib/                         # Library tests — buildTasteProfile, stream
+├── amplify.yml                      # Amplify build config — registry override, SSR artifacts
+├── .npmrc                           # Public npm registry override
+├── .env.example                     # Required environment variables
+└── vitest.config.ts                 # Test runner config
 ```
 
 ---
@@ -205,9 +269,8 @@ palatable/
 
 - Node.js 20+
 - AWS account with DynamoDB access
-- AWS credentials configured locally
-- Qloo API key — [request access](https://qloo.com)
-- AWS Mantle API key — for LLM inference
+- Qloo API key
+- AWS Mantle API key
 
 ### 1. Install dependencies
 
@@ -221,76 +284,79 @@ npm install
 cp .env.example .env
 ```
 
-Fill in every value:
-
 | Variable | Description |
 |---|---|
 | `QLOO_API_KEY` | Qloo Insights API key |
-| `QLOO_API_BASE_URL` | Qloo base URL (e.g. `https://api.qloo.com`) |
+| `QLOO_API_BASE_URL` | Qloo base URL |
 | `MANTLE_API_KEY` | AWS Mantle gateway API key |
 | `MANTLE_BASE_URL` | `https://bedrock-mantle.us-east-1.api.aws/v1` |
 | `MANTLE_MODEL` | `deepseek.v3.2` |
-| `DB_REGION` | AWS region for DynamoDB (e.g. `us-east-1`) |
+| `DB_REGION` | AWS region for DynamoDB |
 | `DB_ACCESS_KEY_ID` | AWS access key with DynamoDB read/write |
 | `DB_SECRET_ACCESS_KEY` | AWS secret key |
 
-### 3. Start the dev server
+### 3. Seed demo data
+
+```bash
+npx tsx scripts/seed-db.ts
+```
+
+### 4. Start the dev server
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-### 4. Run unit tests
+### 5. Run unit tests
 
 ```bash
 npm test
 ```
 
-### 5. Run evals
+### 6. Run smoke test
+
+```bash
+npx tsx scripts/smoke-test.ts
+```
+
+### 7. Run evals
 
 ```bash
 npm run eval
 ```
 
-Requires live Qloo API and DynamoDB. Tests extraction accuracy, negotiation correctness, and end-to-end pipeline behavior against seeded chat fixtures.
+Requires live Qloo API and DynamoDB. Runs consensus and content safety behavioral suites against fixture data.
 
 ---
 
-## Product Vision
+## Roadmap
 
-Palatable is a proof-of-concept for a bigger idea: a native extension inside WhatsApp, Telegram, or Slack group chats that listens passively, builds each member's taste profile over time, and activates when planning intent is detected.
+### Stage 1 — Today (Hackathon Demo)
+The current build. Three seeded groups with real taste profiles, a try-it-yourself flow where you describe your group in natural language, and a live four-agent negotiation pipeline (Extraction → Qloo → Negotiator + Advocate + Skeptic → Synthesis) streaming over SSE. Taste anchors persist in DynamoDB across sessions.
 
-No forms. No setup. No "what are your preferences?" friction. The chat already contains the signal — who talks about going to jazz bars, who keeps mentioning they're off meat, who always suggests the most expensive option and whose suggestions always get shot down.
-
-Every group decision Qloo's taste graph supports — destinations, restaurants, concerts, activities — becomes negotiable: not by asking everyone to fill out a form, but by reading what they've already said to each other.
-
-The demo is seeded travel planning. The vision is taste-aware group intelligence at the layer where groups already live.
-
----
-
-## What's Next
-
-### Stage 2 — Persistent Taste Profiles
-
-- Real-time chat ingestion via webhook (WhatsApp Business API, Slack Events API)
-- Taste anchor evolution across sessions — confidence scoring, reinforcement, contradiction detection
-- Per-group taste graph that grows with every conversation
-- Anchor-to-Qloo entity mapping for deeper affinities (not just top-level entity types)
+### Stage 2 — Persistent Taste Memory
+- Taste anchors accumulate across conversations, not just one session
+- Confidence scoring evolves over time — reinforced signals strengthen, contradicted signals decay
+- Anchor lifecycle management: `active`, `deprecated`, `contradicted` states update automatically as the group keeps talking
+- Per-group taste graph that gets sharper with every interaction
 
 ### Stage 3 — Any Decision Type
-
-- Restaurant negotiation (tonight → venue affinities)
-- Concert / event planning (this weekend → cultural event affinities)
+- Restaurant negotiation (tonight → Qloo venue affinities)
+- Concert and event planning (this weekend → cultural event affinities)
 - Group activity suggestions (outdoor, nightlife, cultural)
-- All from the same taste graph, same negotiation pipeline
+- Same extraction pipeline, same agents, same Qloo integration — just different entity types and negotiation weights
 
-### Stage 4 — Feedback Loop
+### Stage 4 — Feedback Loop to Qloo
+- The accept/reject flow is already built — every decision is captured in the negotiation state
+- An accept reinforces the anchors that drove the recommendation; a reject weakens them
+- Per-group anchor weights improve over time based on real decisions, not just stated preferences
+- Aggregate signal across groups improves Qloo's taste graph for everyone
 
-- Every group accept/reject feeds back signal to improve per-group taste weights
-- "We went to Lisbon — it was perfect" reinforces the anchors that drove the recommendation
-- "We ended up in Barcelona — Lisbon was too expensive" flags price sensitivity as a weight
+### Stage 5 — The Full Product
+- A persistent group chat app where taste data accumulates naturally over months of conversation
+- Planning intent detection triggers the negotiation pipeline automatically — no explicit prompt needed
+- Any group decision Qloo supports, handled by the same system that already knows the group
+- The moat: a taste graph built from real group behavior that gets harder to replicate every day
 
 ---
 

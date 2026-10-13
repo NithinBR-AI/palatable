@@ -5,6 +5,7 @@ frontend:
       commands:
         - nvm use 20
         - export NODE_OPTIONS='--max-old-space-size=6000'
+        - export npm_config_registry=https://registry.npmjs.org
         - npm install --legacy-peer-deps --loglevel verbose
     build:
       commands:

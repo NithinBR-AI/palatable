@@ -1,5 +1,5 @@
 import { extractAnchors, type RawMessage } from "@/lib/extract/anchors";
-import { checkRateLimit, checkAnchorQuality } from "@/lib/guardrails";
+import { checkRateLimit, checkAnchorQuality, checkContentSafety } from "@/lib/guardrails";
 
 interface RequestBody {
   messages: RawMessage[];
@@ -30,6 +30,11 @@ export async function POST(req: Request) {
 
   if (!Array.isArray(body.messages) || body.messages.length === 0) {
     return new Response(JSON.stringify({ error: "messages array is required and must not be empty" }), { status: 400 });
+  }
+
+  const safetyCheck = await checkContentSafety(body.messages);
+  if (safetyCheck.blocked) {
+    return new Response(JSON.stringify({ error: safetyCheck.reason }), { status: 422 });
   }
 
   try {

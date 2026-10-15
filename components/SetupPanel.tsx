@@ -169,10 +169,10 @@ export function SetupPanel({ participants, setParticipants, onStart, onBack }: S
             <div>
               <div style={{ marginBottom: 6 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", display: "block", marginBottom: 2 }}>
-                  What are they into?
+                  Describe their taste — music, food, places, vibes
                 </label>
                 <span style={{ fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.5 }}>
-                  Palatable maps their taste across music, food, film and travel to find somewhere they'll actually love — not just tolerate.
+                  In production, Palatable learns from months of real group chat. For this demo, 2–3 sentences is enough to run the full pipeline.
                 </span>
               </div>
               <textarea
@@ -190,9 +190,30 @@ export function SetupPanel({ participants, setParticipants, onStart, onBack }: S
                   transition: "border-color 0.15s, box-shadow 0.15s",
                 }}
               />
-              <p style={{ fontSize: 11, color: "var(--text-tertiary)", margin: "5px 0 0", fontFamily: "var(--font-geist-mono)" }}>
-                Tip: the more specific, the better the recommendation · ⌘ + Enter to add
-              </p>
+              {description.trim().length > 0 && !canAdd ? (
+                <div style={{ margin: "6px 0 0" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: "var(--font-geist-mono)" }}>
+                      Mention an artist, a cuisine, a place, or a vibe
+                    </span>
+                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: "var(--font-geist-mono)" }}>
+                      {description.trim().length} / 20
+                    </span>
+                  </div>
+                  <div style={{ height: 3, borderRadius: 2, background: "var(--border)", overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: 2,
+                      background: "var(--accent)",
+                      width: `${Math.min(100, (description.trim().length / 20) * 100)}%`,
+                      transition: "width 0.15s ease",
+                    }} />
+                  </div>
+                </div>
+              ) : !description.trim().length ? (
+                <p style={{ fontSize: 11, color: "var(--text-tertiary)", margin: "5px 0 0", fontFamily: "var(--font-geist-mono)" }}>
+                  Mention an artist, a cuisine, a place, or a vibe · ⌘ + Enter to add
+                </p>
+              ) : null}
             </div>
 
             <button
@@ -208,8 +229,13 @@ export function SetupPanel({ participants, setParticipants, onStart, onBack }: S
                 transition: "background 0.15s, box-shadow 0.15s",
               }}
             >
-              {canAdd ? `+ Add ${name.trim() || "person"}` : "Enter a name and describe their taste"}
+              {canAdd ? `+ Add ${name.trim() || "person"}` : "Add a name and describe their taste"}
             </button>
+            {name.trim().length > 0 && description.trim().length > 0 && !canAdd && (
+              <p style={{ fontSize: 12, color: "var(--coral, #F97066)", margin: "6px 0 0", textAlign: "center", fontFamily: "var(--font-geist-mono)" }}>
+                A bit more detail — mention an artist, a place, or a food they love
+              </p>
+            )}
           </div>
         ) : (
           <button

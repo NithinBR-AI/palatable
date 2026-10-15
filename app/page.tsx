@@ -89,7 +89,7 @@ export default function Home() {
           <span style={{ color: "#4F46E5" }}>Pal</span><span style={{ color: "#F97066" }}>at</span><span style={{ color: "#4F46E5" }}>able</span>
         </span>
         <span style={{ fontFamily: "var(--font-geist-mono)", fontSize: 10, color: "var(--text-tertiary)", letterSpacing: "0.05em" }}>
-          v0.1 · Qloo × Bedrock
+          v0.1 · Qloo Hackathon 2026
         </span>
       </header>
 

@@ -16,7 +16,9 @@ Built for the **Qloo Hackathon · 2026**.
 
 This hackathon demo solves travel planning for one group. The bigger product is something more fundamental.
 
-**A persistent group chat app that owns taste data.** Every conversation — every artist mention, every restaurant someone loved, every place someone vetoed — builds a shared taste profile for the group. Anchors accumulate, reinforce, and evolve over time. When the group is ready to plan anything, Palatable already knows everyone's taste and negotiates on their behalf without anyone filling out a form.
+**A group chat app where taste is a first-class citizen.** Not a plugin on top of WhatsApp or iMessage — a standalone chat app where every conversation quietly builds a taste profile for the group. Every artist someone mentions, every restaurant they loved, every place they vetoed — it all accumulates in the background without anyone filling out a form. When the group is ready to plan something, Palatable already knows everyone and negotiates on their behalf. The chat is the product.
+
+**How it works at scale — incremental extraction, not batch processing.** The naive approach — dumping the entire chat history into an LLM when someone asks for a recommendation — doesn't scale. The real architecture runs extraction as a background job: messages land in a time-series store (PostgreSQL or Cassandra for high-write, time-ordered chat at scale), a scheduled worker periodically processes unprocessed messages in small batches, and the compressed taste graph is upserted into DynamoDB as structured anchor records. By the time the group asks "where should we go?", the taste graph is already built. The LLM never sees the full chat history at query time — only the anchors extracted from it.
 
 **Any decision Qloo's taste graph supports.** Travel today. Restaurant tonight. Concert next week. The same extraction pipeline, the same agents, the same Qloo affinities — just different entity types. The demo is one use case. The architecture is general.
 

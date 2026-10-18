@@ -4,7 +4,7 @@ Alex wants somewhere with a good music scene and interesting food. Zara is done 
 
 This is every group trip. Four people, four completely different ideas of a good time, and a group chat that's been going for three days without landing anywhere.
 
-**Palatable solves this.** It reads what everyone is actually into — the artists they mention, the places they've been, the food they keep bringing up — maps those signals to Qloo's taste graph, and runs three AI agents (a Negotiator, an Advocate, and a Skeptic) to find the place the whole group can genuinely agree on. Not a compromise. An actual answer.
+**Palatable solves this.** It reads what everyone is actually into — the artists they mention, the places they've been, the food they keep bringing up — maps those signals to Qloo's taste graph, and runs a four-agent pipeline (an Extraction Agent, a Negotiator, an Advocate, and a Skeptic) to find the place the whole group can genuinely agree on. Not a compromise. An actual answer.
 
 You can watch it work on a real group, or describe your own group and get a live recommendation.
 

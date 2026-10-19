@@ -136,7 +136,7 @@ A taste anchor is a signal about what someone likes — an artist they mention, 
 Each anchor has:
 - **Entity ID** — mapped to a Qloo entity (artist, movie, TV show, brand, place) when possible, using priority-ordered type resolution to pick the best match
 - **Vibe context** — freeform signals that don't map to a Qloo entity ("rooftop bars", "street food", "live music")
-- **Confidence** — starts at 0.5; the data model supports reinforcement and contradiction updates (Stage 2 feature)
+- **Confidence** — starts at 0.5; the schema supports reinforcement and contradiction updates as signals accumulate over time
 - **Lifecycle status** — `active`, `deprecated`, or `contradicted` — currently all extractions start as `active`
 
 The extraction prompt classifies each mention as either a `named_entity` (artist, band, film, TV show, global brand, public figure) or a `vibe` (descriptive preference). Named entities are resolved to Qloo entity IDs via search; vibe signals enter the pipeline as freeform context. Only named-entity anchors that resolve to a Qloo ID with cross-domain taste signal contribute to destination affinities.

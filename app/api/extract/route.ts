@@ -34,16 +34,19 @@ export async function POST(req: Request) {
   }
 
   return makeSSEStream(async (emit) => {
-    const safetyCheck = await checkContentSafety(body.messages);
+    // Emit heartbeat immediately so the connection stays alive
+    emit({ type: "anchors_resolving", payload: { count: body.messages.length } });
+
+    // Run safety check and extraction in parallel — each is an independent LLM call
+    const [safetyCheck, anchors] = await Promise.all([
+      checkContentSafety(body.messages),
+      extractAnchors(body.messages, body.persist ?? true),
+    ]);
+
     if (safetyCheck.blocked) {
       emit({ type: "error", payload: { message: safetyCheck.reason, code: "blocked" } });
       return;
     }
-
-    // Emit a heartbeat so the connection stays alive during the LLM + Qloo calls
-    emit({ type: "anchors_resolving", payload: { count: body.messages.length } });
-
-    const anchors = await extractAnchors(body.messages, body.persist ?? true);
     const { warnings, blocked } = checkAnchorQuality(anchors, body.messages);
 
     emit({

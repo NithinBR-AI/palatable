@@ -77,7 +77,7 @@ Participant descriptions (freeform text about tastes, artists, places, vibes)
         honest trade-offs surfaced
 ```
 
-Both extraction and negotiation stream live over SSE — results appear as they complete, keeping the connection alive past Amplify's 29s API Gateway limit.
+Both extraction and negotiation stream live over SSE — results appear as they complete, keeping the connection alive past Amplify's 28s Lambda limit.
 
 ---
 
@@ -88,7 +88,7 @@ Both extraction and negotiation stream live over SSE — results appear as they 
 ```
 Browser (Next.js SSR)
     │
-    ├── /api/extract      — Extraction Agent (AWS Mantle → deepseek.v3.2, SSE)
+    ├── /api/extract      — Extraction Agent (AWS Mantle → deepseek.v3.1, SSE)
     ├── /api/negotiate    — Qloo → Negotiator + Advocate + Skeptic loop (SSE)
     ├── /api/llm-only     — Side-by-side: same negotiation without Qloo (no taste graph)
     │
@@ -100,7 +100,7 @@ Browser (Next.js SSR)
     └── AWS Amplify (SSR deployment)
 ```
 
-All LLM inference goes through AWS Mantle (`deepseek.v3.2`, OpenAI-compatible endpoint). Qloo Insights API provides the taste graph — destination affinities, cross-entity signals, and cultural resonance a generic LLM cannot replicate.
+All LLM inference goes through AWS Mantle (`deepseek.v3.1`, OpenAI-compatible endpoint). Qloo Insights API provides the taste graph — destination affinities, cross-entity signals, and cultural resonance a generic LLM cannot replicate.
 
 ---
 
@@ -174,8 +174,8 @@ Anchors accumulate over time. Each extraction run adds new anchors and updates c
 
 | Layer | Technology |
 |---|---|
-| **Frontend + SSR** | Next.js 14, TypeScript, Tailwind CSS |
-| **Inference** | AWS Mantle gateway (`deepseek.v3.2`, OpenAI-compatible) |
+| **Frontend + SSR** | Next.js 16, TypeScript, Tailwind CSS |
+| **Inference** | AWS Mantle gateway (`deepseek.v3.1`, OpenAI-compatible) |
 | **Taste graph** | Qloo Insights API |
 | **Database** | Amazon DynamoDB (3 tables) |
 | **Streaming** | Server-Sent Events (SSE) |
@@ -294,7 +294,7 @@ cp .env.example .env
 | `QLOO_API_BASE_URL` | Qloo base URL |
 | `MANTLE_API_KEY` | AWS Mantle gateway API key |
 | `MANTLE_BASE_URL` | `https://bedrock-mantle.us-east-1.api.aws/v1` |
-| `MANTLE_MODEL` | `deepseek.v3.2` |
+| `MANTLE_MODEL` | `deepseek.v3.1` |
 | `DB_REGION` | AWS region for DynamoDB |
 | `DB_ACCESS_KEY_ID` | AWS access key with DynamoDB read/write |
 | `DB_SECRET_ACCESS_KEY` | AWS secret key |

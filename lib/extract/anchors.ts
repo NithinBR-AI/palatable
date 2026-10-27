@@ -85,6 +85,8 @@ export async function extractAnchors(
   const llmOutput = await runStructuredCompletion<LLMExtractionOutput>(
     EXTRACTION_SYSTEM_PROMPT,
     `Extract taste anchors from these messages:\n\n${messageBlock}`,
+    [],
+    { maxTokens: 800 },
   );
 
   const rawAnchors = llmOutput.anchors ?? [];

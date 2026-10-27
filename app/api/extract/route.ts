@@ -32,13 +32,15 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ error: "messages array is required and must not be empty" }), { status: 400 });
   }
 
-  const safetyCheck = await checkContentSafety(body.messages);
-  if (safetyCheck.blocked) {
-    return new Response(JSON.stringify({ error: safetyCheck.reason }), { status: 422 });
-  }
-
   try {
-    const anchors = await extractAnchors(body.messages, body.persist ?? true);
+    const [safetyCheck, anchors] = await Promise.all([
+      checkContentSafety(body.messages),
+      extractAnchors(body.messages, body.persist ?? true),
+    ]);
+
+    if (safetyCheck.blocked) {
+      return new Response(JSON.stringify({ error: safetyCheck.reason }), { status: 422 });
+    }
 
     const { warnings, blocked } = checkAnchorQuality(anchors, body.messages);
 

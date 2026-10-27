@@ -15,6 +15,7 @@ vi.mock("@/lib/guardrails", async (importOriginal) => {
     ...actual,
     checkRateLimit: vi.fn().mockReturnValue({ allowed: true }),
     checkAnchorQuality: vi.fn().mockReturnValue({ warnings: [], blocked: false }),
+    checkContentSafety: vi.fn().mockResolvedValue({ blocked: false }),
   };
 });
 
@@ -32,6 +33,26 @@ function makeRequest(body: unknown, ip = "1.2.3.4"): Request {
     headers: { "Content-Type": "application/json", "x-forwarded-for": ip },
     body: JSON.stringify(body),
   });
+}
+
+// Read all SSE events from a streaming response
+async function readSSE(res: Response): Promise<{ type: string; payload?: Record<string, unknown> }[]> {
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  const events: { type: string; payload?: Record<string, unknown> }[] = [];
+  let buf = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      events.push(JSON.parse(line.slice(6)));
+    }
+  }
+  return events;
 }
 
 const VALID_MESSAGES = [
@@ -57,22 +78,26 @@ beforeEach(() => {
 
 describe("POST /api/extract", () => {
   describe("happy path", () => {
-    it("returns 200 with anchors, warnings, and blocked flag", async () => {
+    it("streams extract_done with anchors, warnings, and blocked flag", async () => {
       const res = await POST(makeRequest({ messages: VALID_MESSAGES }));
       expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json.anchors).toHaveLength(1);
-      expect(json.blocked).toBe(false);
-      expect(json.warnings).toEqual([]);
+      const events = await readSSE(res);
+      const done = events.find((e) => e.type === "extract_done");
+      expect(done).toBeDefined();
+      expect((done!.payload!.anchors as unknown[]).length).toBe(1);
+      expect(done!.payload!.blocked).toBe(false);
+      expect(done!.payload!.warnings).toEqual([]);
     });
 
     it("passes persist=false to extractAnchors when specified", async () => {
-      await POST(makeRequest({ messages: VALID_MESSAGES, persist: false }));
+      const res = await POST(makeRequest({ messages: VALID_MESSAGES, persist: false }));
+      await readSSE(res);
       expect(mockExtract).toHaveBeenCalledWith(VALID_MESSAGES, false);
     });
 
     it("defaults persist to true when not specified", async () => {
-      await POST(makeRequest({ messages: VALID_MESSAGES }));
+      const res = await POST(makeRequest({ messages: VALID_MESSAGES }));
+      await readSSE(res);
       expect(mockExtract).toHaveBeenCalledWith(VALID_MESSAGES, true);
     });
   });
@@ -91,7 +116,8 @@ describe("POST /api/extract", () => {
     });
 
     it("uses the IP from x-forwarded-for as the rate limit key", async () => {
-      await POST(makeRequest({ messages: VALID_MESSAGES }, "9.8.7.6"));
+      const res = await POST(makeRequest({ messages: VALID_MESSAGES }, "9.8.7.6"));
+      await readSSE(res);
       expect(mockRateLimit).toHaveBeenCalledWith("9.8.7.6");
     });
 
@@ -100,7 +126,8 @@ describe("POST /api/extract", () => {
         method: "POST",
         body: JSON.stringify({ messages: VALID_MESSAGES }),
       });
-      await POST(req);
+      const res = await POST(req);
+      await readSSE(res);
       expect(mockRateLimit).toHaveBeenCalledWith("unknown");
     });
   });
@@ -137,39 +164,42 @@ describe("POST /api/extract", () => {
   });
 
   describe("guardrail integration", () => {
-    it("returns blocked=true when checkAnchorQuality blocks", async () => {
+    it("streams extract_done with blocked=true when checkAnchorQuality blocks", async () => {
       mockQuality.mockReturnValue({ warnings: [], blocked: true });
       mockExtract.mockResolvedValue([]);
       const res = await POST(makeRequest({ messages: VALID_MESSAGES }));
-      const json = await res.json();
-      expect(json.blocked).toBe(true);
+      const events = await readSSE(res);
+      const done = events.find((e) => e.type === "extract_done");
+      expect(done!.payload!.blocked).toBe(true);
     });
 
-    it("returns warnings in response when quality check produces them", async () => {
+    it("streams extract_done with warnings when quality check produces them", async () => {
       const warning = { participantId: "p-b", participantName: "Bob", level: "no_signal" as const };
       mockQuality.mockReturnValue({ warnings: [warning], blocked: false });
       const res = await POST(makeRequest({ messages: VALID_MESSAGES }));
-      const json = await res.json();
-      expect(json.warnings).toHaveLength(1);
-      expect(json.warnings[0].level).toBe("no_signal");
+      const events = await readSSE(res);
+      const done = events.find((e) => e.type === "extract_done");
+      expect((done!.payload!.warnings as unknown[]).length).toBe(1);
     });
   });
 
   describe("error handling", () => {
-    it("returns 500 when extractAnchors throws", async () => {
+    it("streams error event when extractAnchors throws", async () => {
       mockExtract.mockRejectedValue(new Error("Bedrock timeout"));
       const res = await POST(makeRequest({ messages: VALID_MESSAGES }));
-      expect(res.status).toBe(500);
-      const json = await res.json();
-      expect(json.error).toBe("Bedrock timeout");
+      expect(res.status).toBe(200); // SSE always starts 200
+      const events = await readSSE(res);
+      const err = events.find((e) => e.type === "error");
+      expect(err).toBeDefined();
+      expect(err!.payload!.message).toBe("Bedrock timeout");
     });
 
-    it("returns 500 with generic message for non-Error throws", async () => {
+    it("streams error event for non-Error throws", async () => {
       mockExtract.mockRejectedValue("string error");
       const res = await POST(makeRequest({ messages: VALID_MESSAGES }));
-      expect(res.status).toBe(500);
-      const json = await res.json();
-      expect(json.error).toBe("Unknown error");
+      const events = await readSSE(res);
+      const err = events.find((e) => e.type === "error");
+      expect(err).toBeDefined();
     });
   });
 });

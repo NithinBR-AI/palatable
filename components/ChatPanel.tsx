@@ -122,14 +122,45 @@ export function ChatPanel({ groupId, onStartNegotiation, onBack }: ChatPanelProp
         }),
       });
 
-      const json = await res.json() as {
-        anchors: ExtractedAnchor[];
-        warnings: { participantId: string; participantName: string; level: "warn" | "no_signal" }[];
-        blocked: boolean;
-      };
-      const anchors = json.anchors ?? [];
-      const warnings = json.warnings ?? [];
-      const blocked = json.blocked ?? false;
+      if (!res.ok || !res.body) {
+        throw new Error(`Extract failed: ${res.status}`);
+      }
+
+      // Read SSE stream until extract_done or error event
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let anchors: ExtractedAnchor[] = [];
+      let warnings: { participantId: string; participantName: string; level: "warn" | "no_signal" }[] = [];
+      let blocked = false;
+      let buf = "";
+
+      outer: while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const event = JSON.parse(line.slice(6)) as { type: string; payload?: Record<string, unknown> };
+          if (event.type === "extract_done") {
+            anchors = (event.payload?.anchors as ExtractedAnchor[]) ?? [];
+            warnings = (event.payload?.warnings as typeof warnings) ?? [];
+            blocked = (event.payload?.blocked as boolean) ?? false;
+            break outer;
+          }
+          if (event.type === "error") {
+            const code = event.payload?.code as string | undefined;
+            if (code === "blocked") {
+              blocked = true;
+            } else {
+              throw new Error((event.payload?.message as string) ?? "Extraction error");
+            }
+            break outer;
+          }
+        }
+      }
+
       setExtractedAnchors(anchors);
 
       // Build taste profile per participant

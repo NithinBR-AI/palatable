@@ -14,6 +14,7 @@ export type StreamEventType =
   | "skeptic_verdict"
   | "critique_revising"
   | "round_complete"
+  | "extract_done"
   | "error";
 
 export interface StreamEvent {

@@ -77,7 +77,7 @@ Participant descriptions (freeform text about tastes, artists, places, vibes)
         honest trade-offs surfaced
 ```
 
-Results stream live over SSE — each agent's output appears as it completes.
+Both extraction and negotiation stream live over SSE — results appear as they complete, keeping the connection alive past Amplify's 29s API Gateway limit.
 
 ---
 
@@ -88,7 +88,7 @@ Results stream live over SSE — each agent's output appears as it completes.
 ```
 Browser (Next.js SSR)
     │
-    ├── /api/extract      — Extraction Agent (AWS Mantle → deepseek.v3.2)
+    ├── /api/extract      — Extraction Agent (AWS Mantle → deepseek.v3.2, SSE)
     ├── /api/negotiate    — Qloo → Negotiator + Advocate + Skeptic loop (SSE)
     ├── /api/llm-only     — Side-by-side: same negotiation without Qloo (no taste graph)
     │

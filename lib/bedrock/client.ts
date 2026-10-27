@@ -70,12 +70,12 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
   throw new Error("withRetry: exhausted retries"); // unreachable
 }
 
-async function callLLM(messages: OAIMessage[], tools: ToolDefinition[], options?: { maxTokens?: number }): Promise<OAIMessage> {
+async function callLLM(messages: OAIMessage[], tools: ToolDefinition[]): Promise<OAIMessage> {
   const body: Record<string, unknown> = {
     model: MANTLE_MODEL,
     messages,
     temperature: 0.3,
-    max_tokens: options?.maxTokens ?? 4096,
+    max_tokens: 4096,
   };
 
   if (tools.length > 0) {
@@ -195,7 +195,6 @@ export async function runStructuredCompletion<T>(
   systemPrompt: string,
   userMessage: string,
   history: HistoryMessage[] = [],
-  options?: { maxTokens?: number },
 ): Promise<T> {
   const messages: OAIMessage[] = [
     { role: "system", content: systemPrompt },
@@ -205,7 +204,7 @@ export async function runStructuredCompletion<T>(
 
   let lastRaw = "";
   for (let attempt = 0; attempt <= 2; attempt++) {
-    const response = await callLLM(messages, [], options);
+    const response = await callLLM(messages, []);
     const raw = (response.content ?? "").trim();
     const json = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
     try {

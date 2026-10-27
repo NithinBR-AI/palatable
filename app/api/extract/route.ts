@@ -1,9 +1,10 @@
 import { extractAnchors, type RawMessage } from "@/lib/extract/anchors";
 import { checkRateLimit, checkAnchorQuality, checkContentSafety } from "@/lib/guardrails";
+import { makeSSEStream } from "@/lib/stream";
 
 interface RequestBody {
   messages: RawMessage[];
-  persist?: boolean; // default true — set false for try-it-yourself (no DB write needed)
+  persist?: boolean;
 }
 
 export async function POST(req: Request) {
@@ -32,24 +33,26 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ error: "messages array is required and must not be empty" }), { status: 400 });
   }
 
-  try {
-    const [safetyCheck, anchors] = await Promise.all([
-      checkContentSafety(body.messages),
-      extractAnchors(body.messages, body.persist ?? true),
-    ]);
-
+  return makeSSEStream(async (emit) => {
+    const safetyCheck = await checkContentSafety(body.messages);
     if (safetyCheck.blocked) {
-      return new Response(JSON.stringify({ error: safetyCheck.reason }), { status: 422 });
+      emit({ type: "error", payload: { message: safetyCheck.reason, code: "blocked" } });
+      return;
     }
 
+    // Emit a heartbeat so the connection stays alive during the LLM + Qloo calls
+    emit({ type: "anchors_resolving", payload: { count: body.messages.length } });
+
+    const anchors = await extractAnchors(body.messages, body.persist ?? true);
     const { warnings, blocked } = checkAnchorQuality(anchors, body.messages);
 
-    return new Response(JSON.stringify({ anchors, warnings, blocked }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
+    emit({
+      type: "extract_done",
+      payload: {
+        anchors,
+        warnings,
+        blocked,
+      },
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return new Response(JSON.stringify({ error: message }), { status: 500 });
-  }
+  });
 }

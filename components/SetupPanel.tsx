@@ -45,7 +45,7 @@ export function SetupPanel({ participants, setParticipants, onStart, onBack }: S
   const removePerson = (id: string) => setParticipants(participants.filter((p) => p.id !== id));
 
   const handleStart = () => {
-    if (participants.length === 0 || loading) return;
+    if (participants.length < 2 || loading) return;
     setLoading(true);
     onStart();
   };
@@ -255,8 +255,15 @@ export function SetupPanel({ participants, setParticipants, onStart, onBack }: S
           </button>
         )}
 
+        {/* Nudge to add a second person */}
+        {participants.length === 1 && !adding && (
+          <p style={{ fontSize: 11, color: "var(--text-tertiary)", textAlign: "center", margin: "0 0 8px", fontFamily: "var(--font-geist-mono)" }}>
+            Add at least one more person — Palatable negotiates across the group
+          </p>
+        )}
+
         {/* CTA */}
-        {participants.length >= 1 && !adding && (
+        {participants.length >= 2 && !adding && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <button
               onClick={handleStart}

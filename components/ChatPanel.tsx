@@ -380,9 +380,9 @@ export function ChatPanel({ groupId, onStartNegotiation, onBack }: ChatPanelProp
         }}>
           <span style={{ fontSize: 13 }}>💡</span>
           <span style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.4 }}>
-            Scroll through the chat to see how the group talks — then type{" "}
-            <strong style={{ color: "var(--accent)" }}>"where should we go?"</strong>{" "}
-            to trigger Palatable
+            Scroll through the chat to see how the group talks — then tap{" "}
+            <strong style={{ color: "var(--accent)" }}>"Ask Palatable where we should go"</strong>{" "}
+            below to trigger the pipeline
           </span>
         </div>
       )}

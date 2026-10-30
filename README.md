@@ -34,7 +34,14 @@ Live app: **https://main.dxuglnvypubxp.amplifyapp.com**
 
 Two experiences at the start screen:
 
-**See it in action** — Three pre-built groups, each with a distinct taste profile (indie film + Japanese food, live music + street food + outdoor adventures, fine dining + contemporary art + design hotels). Pick a group, scroll through their real chat conversations, and ask Palatable where they should go. The Negotiator, Advocate, and Skeptic agents debate live over SSE — each working from Qloo affinity scores built from what the group actually talked about.
+**Quickstart:**
+1. Pick **The Usual Suspects** → scroll the chat → tap **"Ask Palatable where we should go"**
+2. Watch the **live agent trace (left)** — anchors resolving, Advocate and Skeptic verdicts — and the **Qloo recommendation (right)** arrive. The AI-only baseline appears below the trace for comparison
+3. Hit **"Try another"** to see the agents revise with the rejection as context
+4. Accept the destination → agents negotiate an **activity** in that city → accept again to reach the **"Consensus reached"** summary with per-person reasoning and a collapsible agent log
+5. Or use **"Try it yourself"** to describe your own group (2+ people, mention artists/food/places) and run the full pipeline live
+
+**See it in action** — Three pre-built groups, each with a distinct taste profile (indie film + Japanese food, live music + street food + outdoor adventures, fine dining + contemporary art + design hotels). Pick a group, scroll through their real chat conversations, and tap the button to trigger Palatable.
 
 **Try it yourself** — Add each person in your group by name and describe them in a few sentences: what music they're into, food they love, places they've been, vibes they chase. Palatable extracts taste anchors from those descriptions — the same way it would from weeks of group chat, just faster — then runs the full Qloo → negotiation → synthesis pipeline to find where your group should go.
 
@@ -108,7 +115,7 @@ All LLM inference goes through AWS Mantle (`deepseek.v3.1`, OpenAI-compatible en
 
 Generic LLMs suggest Paris, Tokyo, New York — the same ten cities for every group. Palatable knows this group would love Lisbon because two participants are on a fado kick, one keeps mentioning natural wine bars, and the fourth has been talking about Pessoa for months.
 
-That specificity comes from Qloo's taste graph. Every negotiation runs **two paths simultaneously**: the Qloo-powered recommendation on the right, and an **"AI ONLY" baseline on the left** — same group, same taste anchors, plain LLM with no Qloo data. Both fire automatically when the panel loads. You watch them arrive side by side: Qloo returns a culturally specific, affinity-scored pick with per-person attribution; the LLM-only path returns a generic guess with no scoring. Qloo is the product, not decoration — and the comparison proves it in real time.
+That specificity comes from Qloo's taste graph. Every negotiation runs **two paths simultaneously**: the Qloo-powered recommendation on the right, and an **"AI ONLY" baseline below the agent trace on the left** — same group, same taste anchors, plain LLM with no Qloo data. Both fire automatically when the panel loads. You watch them arrive: Qloo returns a culturally specific, affinity-scored pick with per-person attribution; the LLM-only path returns a generic guess with no scoring. Qloo is the product, not decoration — and the comparison proves it in real time.
 
 ---
 

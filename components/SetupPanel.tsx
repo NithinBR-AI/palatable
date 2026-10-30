@@ -248,11 +248,18 @@ export function SetupPanel({ participants, setParticipants, onStart, onBack }: S
               color: "var(--text-secondary)", cursor: "pointer",
               fontFamily: "var(--font-geist-sans)",
               transition: "border-color 0.15s, color 0.15s",
-              marginBottom: participants.length > 0 ? 12 : 0,
+              marginBottom: participants.length > 0 ? 12 : 8,
             }}
           >
             + Add {participants.length === 0 ? "first person" : "another person"}
           </button>
+        )}
+
+        {/* Minimum group hint — shown from the start until 2 people added */}
+        {participants.length === 0 && !adding && (
+          <p style={{ fontSize: 11, color: "var(--text-tertiary)", textAlign: "center", margin: "0 0 8px", fontFamily: "var(--font-geist-mono)" }}>
+            Add at least 2 people — Palatable negotiates across the group
+          </p>
         )}
 
         {/* Nudge to add a second person */}
